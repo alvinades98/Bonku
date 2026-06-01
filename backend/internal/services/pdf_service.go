@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 type PDFService struct {
@@ -153,4 +155,35 @@ func FormatFilename(invoiceNumber string) string {
 	safe = filepath.Clean(safe)
 	safe = safe + ".pdf"
 	return safe
+}
+
+// FormatDate converts date strings (ISO 8601 or YYYY-MM-DD) to "01 Januari 2006" format (Indonesian)
+func FormatDate(dateStr string) string {
+	// Strip time portion if present
+	clean := strings.TrimSuffix(dateStr, "T00:00:00Z")
+	clean = strings.TrimSuffix(clean, "+00:00")
+
+	// Try parsing as full RFC3339
+	if t, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return formatIndonesianDate(t)
+	}
+
+	// Try parsing as YYYY-MM-DD
+	if t, err := time.Parse("2006-01-02", clean); err == nil {
+		return formatIndonesianDate(t)
+	}
+
+	// Fallback: return cleaned string
+	return clean
+}
+
+var monthNames = map[time.Month]string{
+	time.January: "Januari", time.February: "Februari", time.March: "Maret",
+	time.April: "April", time.May: "Mei", time.June: "Juni",
+	time.July: "Juli", time.August: "Agustus", time.September: "September",
+	time.October: "Oktober", time.November: "November", time.December: "Desember",
+}
+
+func formatIndonesianDate(t time.Time) string {
+	return fmt.Sprintf("%02d %s %d", t.Day(), monthNames[t.Month()], t.Year())
 }

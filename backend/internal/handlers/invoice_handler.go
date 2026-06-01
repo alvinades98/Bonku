@@ -235,7 +235,7 @@ func (h *InvoiceHandler) Update(c echo.Context) error {
 	}
 
 	if err := h.InvoiceRepo.Update(invoice, items); err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to update invoice: "+err.Error(), nil))
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to update invoice", nil))
 	}
 
 	savedInvoice, err := h.InvoiceRepo.GetByID(invoice.ID, userID)
@@ -293,8 +293,8 @@ func (h *InvoiceHandler) DownloadPDF(c echo.Context) error {
 
 	pdfData := services.InvoicePDFData{
 		InvoiceNumber:  invoice.InvoiceNumber,
-		IssueDate:      invoice.IssueDate,
-		DueDate:        invoice.DueDate,
+		IssueDate:      services.FormatDate(invoice.IssueDate),
+		DueDate:        services.FormatDate(invoice.DueDate),
 		Status:         invoice.Status,
 		CompanyName:    user.Name,
 		CompanyAddress: user.CompanyAddress,
