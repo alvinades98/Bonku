@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { dashboardApi, invoicesApi, ApiErrorClass } from '@/lib/api'
 import type { DashboardStats, Invoice } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { showError } from '@/lib/toast'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -17,7 +18,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -31,7 +31,7 @@ export default function DashboardPage() {
       })
       .catch((err) => {
         if (err instanceof ApiErrorClass) {
-          setError(err.message)
+          showError(err.message)
         }
         setLoading(false)
       })
@@ -41,14 +41,6 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-sm text-slate-400">Loading...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error}
       </div>
     )
   }

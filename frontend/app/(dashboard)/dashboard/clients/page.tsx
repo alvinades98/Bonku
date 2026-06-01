@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react'
 import { clientsApi, ApiErrorClass } from '@/lib/api'
 import type { Client } from '@/lib/types'
+import { showSuccess, showError, showConfirm } from '@/lib/toast'
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' })
   const [formLoading, setFormLoading] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
     loadClients()
@@ -26,7 +25,7 @@ export default function ClientsPage() {
       })
       .catch((err) => {
         if (err instanceof ApiErrorClass) {
-          setError(err.message)
+          showError(err.message)
         }
         setLoading(false)
       })
@@ -36,7 +35,6 @@ export default function ClientsPage() {
     setEditingClient(null)
     setFormData({ name: '', email: '', phone: '', address: '' })
     setShowForm(true)
-    setFormError(null)
   }
 
   const openEditForm = (client: Client) => {
@@ -48,27 +46,27 @@ export default function ClientsPage() {
       address: client.address ?? '',
     })
     setShowForm(true)
-    setFormError(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormLoading(true)
-    setFormError(null)
 
     try {
       if (editingClient) {
         await clientsApi.update(editingClient.id, formData)
+        showSuccess('Client updated successfully')
       } else {
         await clientsApi.create(formData)
+        showSuccess('Client created successfully')
       }
       setShowForm(false)
       loadClients()
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        setFormError(err.message)
+        showError(err.message)
       } else {
-        setFormError('Failed to save client')
+        showError('Failed to save client')
       }
     } finally {
       setFormLoading(false)
@@ -76,13 +74,15 @@ export default function ClientsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this client?')) return
+    const confirmed = await showConfirm('Are you sure you want to delete this client?')
+    if (!confirmed) return
     try {
       await clientsApi.delete(id)
       setClients((prev) => prev.filter((c) => c.id !== id))
+      showSuccess('Client deleted successfully')
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        alert(err.message)
+        showError(err.message)
       }
     }
   }
@@ -91,14 +91,6 @@ export default function ClientsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-sm text-slate-400">Loading...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error}
       </div>
     )
   }
@@ -123,12 +115,6 @@ export default function ClientsPage() {
           <h2 className="text-base font-medium text-slate-800 mb-4">
             {editingClient ? 'Edit Client' : 'New Client'}
           </h2>
-
-          {formError && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {formError}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

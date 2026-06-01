@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -234,7 +235,7 @@ func (h *InvoiceHandler) Update(c echo.Context) error {
 	}
 
 	if err := h.InvoiceRepo.Update(invoice, items); err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to update invoice", nil))
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to update invoice: "+err.Error(), nil))
 	}
 
 	savedInvoice, err := h.InvoiceRepo.GetByID(invoice.ID, userID)
@@ -305,7 +306,7 @@ func (h *InvoiceHandler) DownloadPDF(c echo.Context) error {
 		ClientAddress:  invoice.Client.Address,
 		Notes:          invoice.Notes,
 		Subtotal:       services.FormatRupiah(invoice.Subtotal),
-		TaxPercent:     services.FormatRupiah(invoice.TaxPercent),
+		TaxPercent:     fmt.Sprintf("%.0f", invoice.TaxPercent),
 		TaxAmount:      services.FormatRupiah(invoice.TaxAmount),
 		Total:          services.FormatRupiah(invoice.Total),
 	}
@@ -314,7 +315,7 @@ func (h *InvoiceHandler) DownloadPDF(c echo.Context) error {
 	for i, item := range invoice.Items {
 		pdfData.Items[i] = services.PDFItem{
 			Description: item.Description,
-			Quantity:    services.FormatRupiah(item.Quantity),
+			Quantity:    fmt.Sprintf("%.0f", item.Quantity),
 			UnitPrice:   services.FormatRupiah(item.UnitPrice),
 			Amount:      services.FormatRupiah(item.Amount),
 		}

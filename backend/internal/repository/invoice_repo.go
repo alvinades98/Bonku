@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"invoice-backend/internal/dto"
@@ -81,7 +82,31 @@ func (r *InvoiceRepository) List(userID uint, status string, page, limit int) ([
 
 func (r *InvoiceRepository) Update(invoice *models.Invoice, items []models.InvoiceItem) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(invoice).Error; err != nil {
+		// Strip time portion from dates — MySQL DATE column needs YYYY-MM-DD
+		issueDate := strings.TrimSuffix(strings.TrimSuffix(invoice.IssueDate, "T00:00:00Z"), "+00:00")
+		dueDate := strings.TrimSuffix(strings.TrimSuffix(invoice.DueDate, "T00:00:00Z"), "+00:00")
+		// Also handle time.Parse format if present
+		if t, err := time.Parse(time.RFC3339, invoice.IssueDate); err == nil {
+			issueDate = t.Format("2006-01-02")
+		}
+		if t, err := time.Parse(time.RFC3339, invoice.DueDate); err == nil {
+			dueDate = t.Format("2006-01-02")
+		}
+
+		updates := map[string]interface{}{
+			"client_id":      invoice.ClientID,
+			"invoice_number": invoice.InvoiceNumber,
+			"issue_date":     issueDate,
+			"due_date":       dueDate,
+			"status":         invoice.Status,
+			"subtotal":       invoice.Subtotal,
+			"tax_percent":    invoice.TaxPercent,
+			"tax_amount":     invoice.TaxAmount,
+			"total":          invoice.Total,
+			"notes":          invoice.Notes,
+		}
+
+		if err := tx.Model(&models.Invoice{}).Where("id = ?", invoice.ID).Updates(updates).Error; err != nil {
 			return err
 		}
 

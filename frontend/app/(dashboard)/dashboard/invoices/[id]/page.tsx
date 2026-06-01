@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { invoicesApi, ApiErrorClass } from '@/lib/api'
 import type { Invoice } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { showSuccess, showError, showConfirm } from '@/lib/toast'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-amber-100 text-amber-800',
@@ -19,7 +20,6 @@ export default function InvoiceDetailPage() {
   const router = useRouter()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const id = Number(params.id)
 
@@ -31,21 +31,23 @@ export default function InvoiceDetailPage() {
       })
       .catch((err) => {
         if (err instanceof ApiErrorClass) {
-          setError(err.message)
+          showError(err.message)
         }
         setLoading(false)
       })
   }, [id])
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this invoice?')) return
+    const confirmed = await showConfirm('Are you sure you want to delete this invoice?')
+    if (!confirmed) return
     try {
       await invoicesApi.delete(id)
+      showSuccess('Invoice deleted successfully')
       router.push('/dashboard/invoices')
       router.refresh()
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        alert(err.message)
+        showError(err.message)
       }
     }
   }
@@ -54,9 +56,10 @@ export default function InvoiceDetailPage() {
     try {
       const updated = await invoicesApi.update(id, { status: newStatus })
       setInvoice(updated)
+      showSuccess(`Status updated to ${newStatus}`)
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        alert(err.message)
+        showError(err.message)
       }
     }
   }
@@ -73,12 +76,8 @@ export default function InvoiceDetailPage() {
     )
   }
 
-  if (error || !invoice) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error || 'Invoice not found'}
-      </div>
-    )
+  if (!invoice) {
+    return null
   }
 
   return (

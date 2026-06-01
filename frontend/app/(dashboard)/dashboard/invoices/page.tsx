@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { invoicesApi, ApiErrorClass } from '@/lib/api'
 import type { Invoice } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { showSuccess, showError, showConfirm } from '@/lib/toast'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -16,7 +17,6 @@ const statusColors: Record<string, string> = {
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('')
 
   useEffect(() => {
@@ -28,20 +28,22 @@ export default function InvoicesPage() {
       })
       .catch((err) => {
         if (err instanceof ApiErrorClass) {
-          setError(err.message)
+          showError(err.message)
         }
         setLoading(false)
       })
   }, [statusFilter])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this invoice?')) return
+    const confirmed = await showConfirm('Are you sure you want to delete this invoice?')
+    if (!confirmed) return
     try {
       await invoicesApi.delete(id)
       setInvoices((prev) => prev.filter((inv) => inv.id !== id))
+      showSuccess('Invoice deleted successfully')
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        alert(err.message)
+        showError(err.message)
       }
     }
   }
@@ -50,14 +52,6 @@ export default function InvoicesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-sm text-slate-400">Loading...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error}
       </div>
     )
   }

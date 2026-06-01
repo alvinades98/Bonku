@@ -114,29 +114,38 @@ func FormatRupiah(amount float64) string {
 		return "Rp 0"
 	}
 
-	result := "Rp "
+	negative := amount < 0
+	if negative {
+		amount = -amount
+	}
+
 	var intPart int64
+	var fracPart float64
 	if amount >= 0 {
 		intPart = int64(amount)
-	} else {
-		intPart = int64(amount)
-		result = "-Rp "
+		fracPart = amount - float64(intPart)
 	}
 
 	str := fmt.Sprintf("%d", intPart)
-	if str[0] == '-' {
-		str = str[1:]
-	}
-
 	runes := []rune(str)
-	for i := len(runes) - 1; i >= 0; i-- {
-		if (len(runes)-1-i)%3 == 0 && i != len(runes)-1 {
-			result += "."
+	var result []rune
+
+	for i, r := range runes {
+		if i > 0 && (len(runes)-i)%3 == 0 {
+			result = append(result, '.')
 		}
-		result += string(runes[i])
+		result = append(result, r)
 	}
 
-	return result
+	output := "Rp " + string(result)
+	if fracPart > 0 {
+		output += fmt.Sprintf(",%.0f", fracPart*100)
+	}
+	if negative {
+		output = "-" + output
+	}
+
+	return output
 }
 
 func FormatFilename(invoiceNumber string) string {

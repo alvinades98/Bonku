@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { invoicesApi, clientsApi, ApiErrorClass } from '@/lib/api'
 import type { Client } from '@/lib/types'
 import { formatCurrency } from '@/lib/utils'
+import { showError } from '@/lib/toast'
 
 interface InvoiceItem {
   id: number
@@ -26,7 +27,6 @@ export default function NewInvoicePage() {
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [taxPercent, setTaxPercent] = useState(11)
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -63,16 +63,14 @@ export default function NewInvoicePage() {
   const total = subtotal + taxAmount
 
   const handleSubmit = async (status: string) => {
-    setError(null)
-
     if (!clientId) {
-      setError('Please select a client')
+      showError('Please select a client')
       return
     }
 
     const validItems = items.filter((item) => item.description.trim())
     if (validItems.length === 0) {
-      setError('Please add at least one item with description')
+      showError('Please add at least one item with description')
       return
     }
 
@@ -98,9 +96,9 @@ export default function NewInvoicePage() {
       router.refresh()
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        setError(err.message)
+        showError(err.message)
       } else {
-        setError('Failed to create invoice')
+        showError('Failed to create invoice')
       }
     } finally {
       setIsLoading(false)
@@ -121,12 +119,6 @@ export default function NewInvoicePage() {
           &larr; Back to invoices
         </Link>
       </div>
-
-      {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
 
       <div className="space-y-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">

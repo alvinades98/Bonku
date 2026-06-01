@@ -4,33 +4,33 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { authApi, ApiErrorClass } from '@/lib/api'
+import { showSuccess, showError } from '@/lib/toast'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setFieldErrors({})
     setIsLoading(true)
 
     try {
       await authApi.register(name, email, password)
-      router.push('/login?registered=1')
+      showSuccess('Account created successfully! Please login.')
+      setTimeout(() => router.push('/login'), 1500)
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        setError(err.message)
+        showError(err.message)
         if (err.errors) {
           setFieldErrors(err.errors)
         }
       } else {
-        setError('Terjadi kesalahan. Coba lagi.')
+        showError('Terjadi kesalahan. Coba lagi.')
       }
     } finally {
       setIsLoading(false)
@@ -41,12 +41,6 @@ export default function RegisterPage() {
     <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8">
       <h2 className="text-xl font-semibold text-slate-800">Create account</h2>
       <p className="text-sm text-slate-500 mt-1">Start generating invoices today</p>
-
-      {error && (
-        <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>

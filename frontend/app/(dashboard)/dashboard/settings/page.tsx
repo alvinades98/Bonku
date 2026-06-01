@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import { authApi, ApiErrorClass } from '@/lib/api'
 import type { User } from '@/lib/types'
+import { showSuccess, showError } from '@/lib/toast'
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]> | null>(null)
 
   const [formData, setFormData] = useState({
@@ -28,7 +27,6 @@ export default function SettingsPage() {
   async function loadProfile() {
     try {
       setLoading(true)
-      setError(null)
       const user = await authApi.me()
       setProfile(user)
       setFormData({
@@ -41,9 +39,9 @@ export default function SettingsPage() {
       })
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        setError(err.message)
+        showError(err.message)
       } else {
-        setError('Failed to load profile')
+        showError('Failed to load profile')
       }
     } finally {
       setLoading(false)
@@ -53,24 +51,21 @@ export default function SettingsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    setSuccess(false)
-    setError(null)
     setValidationErrors(null)
 
     try {
       const updated = await authApi.updateProfile(formData)
       setProfile(updated)
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
+      showSuccess('Profile updated successfully')
     } catch (err) {
       if (err instanceof ApiErrorClass) {
         if (err.errors) {
           setValidationErrors(err.errors)
         } else {
-          setError(err.message)
+          showError(err.message)
         }
       } else {
-        setError('Failed to update profile')
+        showError('Failed to update profile')
       }
     } finally {
       setSaving(false)
@@ -95,17 +90,6 @@ export default function SettingsPage() {
       <p className="text-slate-500 mt-1">Manage your business profile</p>
 
       <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-            Profile updated successfully
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
         {/* Personal Info */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-base font-medium text-slate-800 mb-4">Personal Information</h2>
