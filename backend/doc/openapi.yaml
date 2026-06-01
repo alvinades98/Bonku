@@ -1,0 +1,1127 @@
+openapi: 3.0.3
+info:
+  title: Invoice Generator API
+  description: |
+    REST API untuk Invoice Generator Micro-SaaS.
+    API ini melayani autentikasi, manajemen klien, pembuatan invoice, dan generate PDF.
+
+    ## Authentication
+    JWT disimpan di **httpOnly cookie** bernama `jwt`.
+    Setiap request ke endpoint protected harus mengirim cookie via `credentials: 'include'`.
+
+    ## Base URL
+    ```
+    http://localhost:8080/api/v1
+    ```
+  version: 1.0.0
+  contact:
+    name: Invoice Generator Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Autentikasi & manajemen user
+  - name: Clients
+    description: Manajemen klien (CRUD)
+  - name: Invoices
+    description: Manajemen invoice (CRUD + PDF)
+  - name: Dashboard
+    description: Statistik dashboard
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register user baru
+      description: Mendaftarkan akun baru dengan email dan password.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: John Doe
+              email: john@example.com
+              password: password123
+      responses:
+        '201':
+          description: User berhasil didaftarkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error atau email sudah terdaftar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      description: |
+        Login dengan email dan password.
+        JWT token akan disimpan di httpOnly cookie `jwt`.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: john@example.com
+              password: password123
+      responses:
+        '200':
+          description: Login berhasil, JWT cookie di-set
+          headers:
+            Set-Cookie:
+              description: JWT token dalam httpOnly cookie
+              schema:
+                type: string
+                example: jwt=eyJhbGciOiJIUzI1NiIs...; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Email atau password salah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      description: Logout dan menghapus JWT cookie.
+      operationId: logout
+      security:
+        - CookieAuth: []
+      responses:
+        '204':
+          description: Logout berhasil, cookie dihapus
+        '401':
+          description: Unauthorized
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      description: Mengambil data user yang sedang login.
+      operationId: getMe
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Data user saat ini
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients:
+    get:
+      tags:
+        - Clients
+      summary: List semua klien
+      description: Mengambil daftar semua klien milik user yang login.
+      operationId: listClients
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: List klien berhasil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Clients
+      summary: Buat klien baru
+      description: Menambahkan klien baru untuk user yang login.
+      operationId: createClient
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+            example:
+              name: PT Maju Jaya
+              email: info@majujaya.com
+              phone: '081234567890'
+              address: Jl. Sudirman No. 1, Jakarta
+      responses:
+        '201':
+          description: Klien berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/{id}:
+    get:
+      tags:
+        - Clients
+      summary: Detail klien
+      description: Mengambil detail klien berdasarkan ID.
+      operationId: getClient
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID klien
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Detail klien
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Klien tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Clients
+      summary: Update klien
+      description: Mengupdate data klien. Semua field optional.
+      operationId: updateClient
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID klien
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+            example:
+              name: PT Maju Jaya Tbk
+              phone: '081987654321'
+      responses:
+        '200':
+          description: Klien berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Klien tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Clients
+      summary: Hapus klien
+      description: Menghapus klien berdasarkan ID.
+      operationId: deleteClient
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID klien
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '204':
+          description: Klien berhasil dihapus
+        '401':
+          description: Unauthorized
+        '404':
+          description: Klien tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices:
+    get:
+      tags:
+        - Invoices
+      summary: List invoice
+      description: Mengambil daftar invoice dengan filter status dan pagination.
+      operationId: listInvoices
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter berdasarkan status
+          schema:
+            $ref: '#/components/schemas/InvoiceStatus'
+          example: draft
+        - name: page
+          in: query
+          required: false
+          description: Nomor halaman
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Jumlah item per halaman
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+          example: 20
+      responses:
+        '200':
+          description: List invoice berhasil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Invoices
+      summary: Buat invoice baru
+      description: |
+        Membuat invoice baru dengan item-item.
+        Perhitungan subtotal, tax_amount, dan total dilakukan otomatis di backend.
+      operationId: createInvoice
+      security:
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceRequest'
+            example:
+              client_id: 1
+              invoice_number: INV-001
+              issue_date: '2024-05-20'
+              due_date: '2024-06-20'
+              status: draft
+              items:
+                - description: Logo Design
+                  quantity: 1
+                  unit_price: 5000000
+                  amount: 5000000
+                - description: UI Design
+                  quantity: 10
+                  unit_price: 500000
+                  amount: 5000000
+              notes: Pembayaran via transfer BCA
+              tax_percent: 11
+      responses:
+        '201':
+          description: Invoice berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/{id}:
+    get:
+      tags:
+        - Invoices
+      summary: Detail invoice
+      description: Mengambil detail invoice termasuk client dan items.
+      operationId: getInvoice
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID invoice
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Detail invoice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Invoice tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Invoices
+      summary: Update invoice
+      description: Mengupdate data invoice. Semua field optional. Jika items di-update, items lama akan di-replace.
+      operationId: updateInvoice
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID invoice
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInvoiceRequest'
+            example:
+              status: sent
+              notes: Sudah dikirim via email
+      responses:
+        '200':
+          description: Invoice berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Invoice tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Invoices
+      summary: Hapus invoice
+      description: Soft delete invoice. Data tidak benar-benar dihapus dari database.
+      operationId: deleteInvoice
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID invoice
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '204':
+          description: Invoice berhasil dihapus (soft delete)
+        '401':
+          description: Unauthorized
+        '404':
+          description: Invoice tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/{id}/pdf:
+    get:
+      tags:
+        - Invoices
+      summary: Download PDF invoice
+      description: |
+        Generate dan download invoice dalam format PDF.
+        Backend merender HTML template lalu mengonversi ke PDF via Gotenberg.
+      operationId: downloadInvoicePDF
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID invoice
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: File PDF berhasil di-generate
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Attachment filename
+              schema:
+                type: string
+                example: attachment; filename=INV-001.pdf
+        '401':
+          description: Unauthorized
+        '404':
+          description: Invoice tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Gagal generate PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: Statistik dashboard
+      description: Mengambil statistik ringkasan untuk dashboard.
+      operationId: getDashboardStats
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Statistik dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+      description: JWT token yang disimpan di httpOnly cookie setelah login
+
+  schemas:
+    # ===== AUTH SCHEMAS =====
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+          example: John Doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: john@example.com
+        password:
+          type: string
+          minLength: 6
+          maxLength: 255
+          format: password
+          example: password123
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        name:
+          type: string
+          example: John Doe
+        company_name:
+          type: string
+          nullable: true
+          example: My Company
+        company_address:
+          type: string
+          nullable: true
+          example: Jl. Contoh No. 123
+        company_phone:
+          type: string
+          nullable: true
+          example: '081234567890'
+        npwp:
+          type: string
+          nullable: true
+          example: '12.345.678.9-012.000'
+        company_logo_path:
+          type: string
+          nullable: true
+          example: ''
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token (juga disimpan di cookie)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    RegisterResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    # ===== CLIENT SCHEMAS =====
+
+    CreateClientRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: PT Maju Jaya
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+          example: info@majujaya.com
+        phone:
+          type: string
+          nullable: true
+          maxLength: 20
+          example: '081234567890'
+        address:
+          type: string
+          nullable: true
+          maxLength: 1000
+          example: Jl. Sudirman No. 1, Jakarta
+
+    UpdateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: PT Maju Jaya Tbk
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+          example: info@majujaya.com
+        phone:
+          type: string
+          nullable: true
+          maxLength: 20
+          example: '081987654321'
+        address:
+          type: string
+          nullable: true
+          maxLength: 1000
+          example: Jl. Gatot Subroto No. 45, Jakarta
+
+    ClientResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: PT Maju Jaya
+        email:
+          type: string
+          nullable: true
+          example: info@majujaya.com
+        phone:
+          type: string
+          nullable: true
+          example: '081234567890'
+        address:
+          type: string
+          nullable: true
+          example: Jl. Sudirman No. 1, Jakarta
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-05-20T10:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-05-20T10:00:00Z'
+
+    # ===== INVOICE SCHEMAS =====
+
+    InvoiceStatus:
+      type: string
+      enum:
+        - draft
+        - sent
+        - paid
+        - cancelled
+      example: draft
+
+    InvoiceItemRequest:
+      type: object
+      required:
+        - description
+        - quantity
+        - unit_price
+        - amount
+      properties:
+        description:
+          type: string
+          minLength: 1
+          example: Logo Design
+        quantity:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 1
+        unit_price:
+          type: number
+          format: double
+          minimum: 0
+          example: 5000000
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 5000000
+
+    InvoiceItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        invoice_id:
+          type: integer
+          format: int64
+          example: 1
+        description:
+          type: string
+          example: Logo Design
+        quantity:
+          type: number
+          format: double
+          example: 1
+        unit_price:
+          type: number
+          format: double
+          example: 5000000
+        amount:
+          type: number
+          format: double
+          example: 5000000
+
+    CreateInvoiceRequest:
+      type: object
+      required:
+        - client_id
+        - invoice_number
+        - issue_date
+        - due_date
+        - items
+        - tax_percent
+      properties:
+        client_id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1
+        invoice_number:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: INV-001
+        issue_date:
+          type: string
+          format: date
+          example: '2024-05-20'
+        due_date:
+          type: string
+          format: date
+          example: '2024-06-20'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InvoiceItemRequest'
+        notes:
+          type: string
+          nullable: true
+          maxLength: 2000
+          example: Pembayaran via transfer BCA
+        tax_percent:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          example: 11
+
+    UpdateInvoiceRequest:
+      type: object
+      properties:
+        client_id:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+          example: 1
+        invoice_number:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+          example: INV-001
+        issue_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2024-05-20'
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: '2024-06-20'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+          nullable: true
+        items:
+          type: array
+          nullable: true
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InvoiceItemRequest'
+        notes:
+          type: string
+          nullable: true
+          maxLength: 2000
+          example: Sudah dikirim via email
+        tax_percent:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          nullable: true
+          example: 11
+
+    InvoiceResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        client_id:
+          type: integer
+          format: int64
+          example: 1
+        invoice_number:
+          type: string
+          example: INV-001
+        issue_date:
+          type: string
+          format: date-time
+          example: '2024-05-20T00:00:00Z'
+        due_date:
+          type: string
+          format: date-time
+          example: '2024-06-20T00:00:00Z'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        subtotal:
+          type: number
+          format: double
+          example: 10000000
+        tax_percent:
+          type: number
+          format: double
+          example: 11
+        tax_amount:
+          type: number
+          format: double
+          example: 1100000
+        total:
+          type: number
+          format: double
+          example: 11100000
+        notes:
+          type: string
+          nullable: true
+          example: Pembayaran via transfer BCA
+        client:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ClientResponse'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItemResponse'
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-05-20T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-05-20T12:00:00Z'
+
+    # ===== DASHBOARD SCHEMAS =====
+
+    DashboardStats:
+      type: object
+      properties:
+        total_invoices:
+          type: integer
+          format: int64
+          description: Total semua invoice
+          example: 25
+        outstanding:
+          type: integer
+          format: int64
+          description: Invoice dengan status draft atau sent
+          example: 10
+        paid:
+          type: integer
+          format: int64
+          description: Invoice dengan status paid
+          example: 15
+        month_total:
+          type: number
+          format: double
+          description: Total revenue bulan ini (invoice paid)
+          example: 50000000
+
+    # ===== ERROR SCHEMAS =====
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: User-friendly error message
+          example: Validation failed
+        errors:
+          type: object
+          nullable: true
+          description: Field-level validation errors
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - Email already exists
+            name:
+              - Name is required
