@@ -183,7 +183,7 @@ export default function NewInvoicePage() {
               <input
                 type="number"
                 value={taxPercent}
-                onChange={(e) => setTaxPercent(Number(e.target.value))}
+                onChange={(e) => setTaxPercent(Math.max(0, Number(e.target.value)))}
                 min={0}
                 max={100}
                 className={inputClass}
@@ -227,17 +227,26 @@ export default function NewInvoicePage() {
                 />
                 <div className="flex gap-2 w-full sm:w-auto">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="Qty"
                     value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '')
+                      updateItem(item.id, 'quantity', digits ? parseInt(digits) : 0)
+                    }}
                     className="w-full sm:w-20 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                   />
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Price"
                     value={item.unitPrice}
-                    onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d.]/g, '')
+                      const num = Number(raw.replace(/^0+(?=\d)/, ''))
+                      if (!isNaN(num)) updateItem(item.id, 'unitPrice', num)
+                    }}
                     className="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
                   />
                   <button

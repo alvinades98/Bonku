@@ -28,12 +28,6 @@ export default function TermsPage() {
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">Terms and Conditions</h1>
         <p className="text-slate-500">Terakhir diperbarui: 1 Juni 2024</p>
 
-        <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-sm text-amber-800">
-            <strong>Catatan:</strong> Ini adalah template Terms and Conditions. Konsultasikan dengan ahli hukum untuk memastikan kepatuhan terhadap hukum yang berlaku.
-          </p>
-        </div>
-
         <section className="mt-8">
           <h2 className="text-xl font-semibold text-slate-800 mt-8 mb-4">1. Pendahuluan</h2>
           <p className="text-slate-600 leading-relaxed">
