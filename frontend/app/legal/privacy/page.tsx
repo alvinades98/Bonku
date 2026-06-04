@@ -13,9 +13,7 @@ export default function PrivacyPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                IG
-              </div>
+              <img src="/logo.png" alt="InvoiceGen" className="w-9 h-9 rounded-xl object-contain" />
               <span className="font-semibold text-slate-800">Invoice Generator</span>
             </Link>
             <Link href="/" className="text-sm text-slate-600 hover:text-slate-800">
@@ -225,9 +223,7 @@ export default function PrivacyPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                IG
-              </div>
+              <img src="/logo.png" alt="InvoiceGen" className="w-7 h-7 rounded-lg object-contain" />
               <span className="font-medium text-slate-700">Invoice Generator</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-slate-500">

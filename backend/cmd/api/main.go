@@ -55,9 +55,9 @@ func main() {
 	invoiceService := services.NewInvoiceService()
 	pdfService := services.NewPDFService(cfg.GotenbergURL, "./templates/invoice.html")
 
-	authHandler := handlers.NewAuthHandler(userRepo, authService, v)
+	authHandler := handlers.NewAuthHandler(userRepo, authService, v, uploadDir)
 	clientHandler := handlers.NewClientHandler(clientRepo, v)
-	invoiceHandler := handlers.NewInvoiceHandler(invoiceRepo, clientRepo, invoiceService, pdfService, v)
+	invoiceHandler := handlers.NewInvoiceHandler(invoiceRepo, clientRepo, invoiceService, pdfService, v, uploadDir)
 
 	api := e.Group("/api/v1")
 
@@ -65,11 +65,14 @@ func main() {
 	api.POST("/auth/login", authHandler.Login)
 	api.POST("/auth/logout", authHandler.Logout)
 
+	api.GET("/stats/public", invoiceHandler.GetPublicStats)
+
 	protected := api.Group("")
 	protected.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	{
 		protected.GET("/auth/me", authHandler.GetMe)
 		protected.PUT("/auth/profile", authHandler.UpdateProfile)
+		protected.POST("/auth/upload-logo", authHandler.UploadLogo)
 
 		protected.GET("/clients", clientHandler.List)
 		protected.GET("/clients/:id", clientHandler.Get)
@@ -86,6 +89,8 @@ func main() {
 
 		protected.GET("/dashboard/stats", invoiceHandler.GetStats)
 	}
+
+	e.Static("/uploads", uploadDir)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "ok"})

@@ -26,24 +26,25 @@ func NewPDFService(gotenbergURL, templatePath string) *PDFService {
 }
 
 type InvoicePDFData struct {
-	InvoiceNumber  string
-	IssueDate      string
-	DueDate        string
-	Status         string
-	CompanyName    string
-	CompanyAddress string
-	CompanyPhone   string
-	NPWP           string
-	ClientName     string
-	ClientEmail    string
-	ClientPhone    string
-	ClientAddress  string
-	Items          []PDFItem
-	Subtotal       string
-	TaxPercent     string
-	TaxAmount      string
-	Total          string
-	Notes          string
+	InvoiceNumber     string
+	IssueDate         string
+	DueDate           string
+	Status            string
+	CompanyName       string
+	CompanyAddress    string
+	CompanyPhone      string
+	NPWP              string
+	CompanyLogoBase64 template.URL
+	ClientName        string
+	ClientEmail       string
+	ClientPhone       string
+	ClientAddress     string
+	Items             []PDFItem
+	Subtotal          string
+	TaxPercent        string
+	TaxAmount         string
+	Total             string
+	Notes             string
 }
 
 type PDFItem struct {

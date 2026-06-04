@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PublicStats from '@/components/PublicStats'
 
 const features = [
   {
@@ -57,12 +58,6 @@ const features = [
   },
 ]
 
-const stats = [
-  { label: 'Invoice Terbuat', value: '1,000+' },
-  { label: 'Pengguna Aktif', value: '100+' },
-  { label: 'Waktu Pembuatan', value: '< 2 min' },
-]
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
@@ -71,9 +66,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                IG
-              </div>
+              <img src="/logo.png" alt="InvoiceGen" className="w-9 h-9 rounded-xl object-contain" />
               <span className="font-semibold text-slate-800">Invoice Generator</span>
             </div>
             <div className="flex items-center gap-3">
@@ -133,15 +126,8 @@ export default function Home() {
 
       {/* Stats Section */}
       <section className="border-y border-slate-200 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-3 divide-x divide-slate-200">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center px-4">
-                <p className="text-3xl sm:text-4xl font-bold text-indigo-600">{stat.value}</p>
-                <p className="mt-1 text-sm text-slate-600">{stat.label}</p>
-              </div>
-            ))}
-          </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <PublicStats />
         </div>
       </section>
 
@@ -243,9 +229,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                IG
-              </div>
+              <img src="/logo.png" alt="InvoiceGen" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-semibold text-slate-800">Invoice Generator</span>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4">

@@ -191,3 +191,15 @@ func (r *InvoiceRepository) GetStats(userID uint) (*dto.DashboardStats, error) {
 
 	return stats, nil
 }
+
+func (r *InvoiceRepository) CountAllInvoices() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Invoice{}).Count(&count).Error
+	return count, err
+}
+
+func (r *InvoiceRepository) CountAllUsers() (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.User{}).Count(&count).Error
+	return count, err
+}

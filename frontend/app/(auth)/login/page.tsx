@@ -27,7 +27,7 @@ export default function LoginPage() {
       router.refresh()
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        showError(err.message)
+        showError(err.message, err.errors)
         if (err.errors) {
           setFieldErrors(err.errors)
         }

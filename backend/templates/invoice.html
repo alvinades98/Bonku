@@ -40,6 +40,12 @@
             color: #6b7280;
             margin-bottom: 4px;
         }
+        .company-logo {
+            max-height: 60px;
+            max-width: 200px;
+            object-fit: contain;
+            margin-bottom: 12px;
+        }
         .invoice-title {
             text-align: right;
         }
@@ -160,6 +166,7 @@
     <div class="container">
         <div class="header">
             <div class="company-info">
+                {{if .CompanyLogoBase64}}<img src="{{.CompanyLogoBase64}}" alt="Logo" class="company-logo" />{{end}}
                 <h1>{{.CompanyName}}</h1>
                 {{if .CompanyAddress}}<p>{{.CompanyAddress}}</p>{{end}}
                 {{if .CompanyPhone}}<p>Telp: {{.CompanyPhone}}</p>{{end}}

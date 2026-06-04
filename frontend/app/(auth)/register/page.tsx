@@ -25,7 +25,7 @@ export default function RegisterPage() {
       setTimeout(() => router.push('/login'), 1500)
     } catch (err) {
       if (err instanceof ApiErrorClass) {
-        showError(err.message)
+        showError(err.message, err.errors)
         if (err.errors) {
           setFieldErrors(err.errors)
         }

@@ -1,7 +1,13 @@
 package handlers
 
 import (
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"invoice-backend/internal/dto"
 	"invoice-backend/internal/models"
@@ -16,13 +22,15 @@ type AuthHandler struct {
 	UserRepo    *repository.UserRepository
 	AuthService *services.AuthService
 	Validator   *validator.Validate
+	UploadDir   string
 }
 
-func NewAuthHandler(userRepo *repository.UserRepository, authService *services.AuthService, v *validator.Validate) *AuthHandler {
+func NewAuthHandler(userRepo *repository.UserRepository, authService *services.AuthService, v *validator.Validate, uploadDir string) *AuthHandler {
 	return &AuthHandler{
 		UserRepo:    userRepo,
 		AuthService: authService,
 		Validator:   v,
+		UploadDir:   uploadDir,
 	}
 }
 
@@ -175,6 +183,47 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, dto.ToUserResponse(*user))
+}
+
+const maxLogoSize = 2 << 20 // 2 MB
+
+func (h *AuthHandler) UploadLogo(c echo.Context) error {
+	file, err := c.FormFile("logo")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.NewErrorResponse("No file uploaded", nil))
+	}
+
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+		return c.JSON(http.StatusUnprocessableEntity, dto.NewErrorResponse("Only JPG and PNG files are allowed", nil))
+	}
+
+	if file.Size > maxLogoSize {
+		return c.JSON(http.StatusUnprocessableEntity, dto.NewErrorResponse("File size must not exceed 2 MB", nil))
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to read file", nil))
+	}
+	defer src.Close()
+
+	filename := fmt.Sprintf("logo_%d%s", time.Now().UnixNano(), ext)
+	dstPath := filepath.Join(h.UploadDir, filename)
+
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to save file", nil))
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to save file", nil))
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"path": "/uploads/" + filename,
+	})
 }
 
 func formatValidationErrors(err error) map[string][]string {

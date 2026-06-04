@@ -5,9 +5,7 @@ export default function AuthLayout({ children }: PropsWithChildren) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl text-white font-bold text-lg mb-3">
-          IG
-        </div>
+        <img src="/logo.png" alt="InvoiceGen" className="w-14 h-14 rounded-xl object-contain mx-auto mb-3" />
         <h1 className="text-2xl font-bold text-slate-800">Invoice Generator</h1>
         <p className="text-slate-500 text-sm mt-1">Create professional invoices in minutes</p>
       </div>

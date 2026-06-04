@@ -8,6 +8,13 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'
 
+export function getUploadUrl(path: string): string {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  const base = API_URL.replace(/\/api\/v1\/?$/, '')
+  return `${base}${path}`
+}
+
 export class ApiErrorClass extends Error {
   status: number
   errors?: Record<string, string[]>
@@ -85,6 +92,30 @@ export const authApi = {
     npwp?: string
     company_logo_path?: string
   }) => apiFetch<User>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+
+  uploadLogo: async (file: File): Promise<{ path: string }> => {
+    const formData = new FormData()
+    formData.append('logo', file)
+    const res = await fetch(`${API_URL}/auth/upload-logo`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+    if (!res.ok) {
+      let errorBody: ApiError | null = null
+      try {
+        errorBody = await res.json()
+      } catch {
+        // ignore
+      }
+      throw new ApiErrorClass(
+        res.status,
+        errorBody?.message || `Upload failed: ${res.status}`,
+        errorBody?.errors
+      )
+    }
+    return res.json()
+  },
 }
 
 // Clients API

@@ -1,9 +1,14 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
+	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"invoice-backend/internal/dto"
 	"invoice-backend/internal/models"
@@ -20,6 +25,7 @@ type InvoiceHandler struct {
 	InvoiceService *services.InvoiceService
 	PDFService     *services.PDFService
 	Validator      *validator.Validate
+	UploadDir      string
 }
 
 func NewInvoiceHandler(
@@ -28,6 +34,7 @@ func NewInvoiceHandler(
 	invoiceService *services.InvoiceService,
 	pdfService *services.PDFService,
 	v *validator.Validate,
+	uploadDir string,
 ) *InvoiceHandler {
 	return &InvoiceHandler{
 		InvoiceRepo:    invoiceRepo,
@@ -35,6 +42,7 @@ func NewInvoiceHandler(
 		InvoiceService: invoiceService,
 		PDFService:     pdfService,
 		Validator:      v,
+		UploadDir:      uploadDir,
 	}
 }
 
@@ -271,6 +279,23 @@ func (h *InvoiceHandler) GetStats(c echo.Context) error {
 	return c.JSON(http.StatusOK, stats)
 }
 
+func (h *InvoiceHandler) GetPublicStats(c echo.Context) error {
+	totalInvoices, err := h.InvoiceRepo.CountAllInvoices()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to fetch stats", nil))
+	}
+
+	totalUsers, err := h.InvoiceRepo.CountAllUsers()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to fetch stats", nil))
+	}
+
+	return c.JSON(http.StatusOK, map[string]int64{
+		"total_invoices": totalInvoices,
+		"total_users":    totalUsers,
+	})
+}
+
 func (h *InvoiceHandler) DownloadPDF(c echo.Context) error {
 	userID := c.Get("user_id").(uint)
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
@@ -291,24 +316,44 @@ func (h *InvoiceHandler) DownloadPDF(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("Failed to fetch user data", nil))
 	}
 
+	var logoBase64 string
+	if user.CompanyLogoPath != "" {
+		filename := filepath.Base(user.CompanyLogoPath)
+		logoFilePath := filepath.Join(h.UploadDir, filename)
+		if data, err := os.ReadFile(logoFilePath); err == nil {
+			ext := strings.ToLower(filepath.Ext(filename))
+			mime := "image/png"
+			if ext == ".jpg" || ext == ".jpeg" {
+				mime = "image/jpeg"
+			}
+			logoBase64 = "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(data)
+		}
+	}
+
+	companyName := user.Name
+	if user.CompanyName != "" {
+		companyName = user.CompanyName
+	}
+
 	pdfData := services.InvoicePDFData{
-		InvoiceNumber:  invoice.InvoiceNumber,
-		IssueDate:      services.FormatDate(invoice.IssueDate),
-		DueDate:        services.FormatDate(invoice.DueDate),
-		Status:         invoice.Status,
-		CompanyName:    user.Name,
-		CompanyAddress: user.CompanyAddress,
-		CompanyPhone:   user.CompanyPhone,
-		NPWP:           user.NPWP,
-		ClientName:     invoice.Client.Name,
-		ClientEmail:    invoice.Client.Email,
-		ClientPhone:    invoice.Client.Phone,
-		ClientAddress:  invoice.Client.Address,
-		Notes:          invoice.Notes,
-		Subtotal:       services.FormatRupiah(invoice.Subtotal),
-		TaxPercent:     fmt.Sprintf("%.0f", invoice.TaxPercent),
-		TaxAmount:      services.FormatRupiah(invoice.TaxAmount),
-		Total:          services.FormatRupiah(invoice.Total),
+		InvoiceNumber:     invoice.InvoiceNumber,
+		IssueDate:         services.FormatDate(invoice.IssueDate),
+		DueDate:           services.FormatDate(invoice.DueDate),
+		Status:            invoice.Status,
+		CompanyName:       companyName,
+		CompanyAddress:    user.CompanyAddress,
+		CompanyPhone:      user.CompanyPhone,
+		NPWP:              user.NPWP,
+		CompanyLogoBase64: template.URL(logoBase64),
+		ClientName:        invoice.Client.Name,
+		ClientEmail:       invoice.Client.Email,
+		ClientPhone:       invoice.Client.Phone,
+		ClientAddress:     invoice.Client.Address,
+		Notes:             invoice.Notes,
+		Subtotal:          services.FormatRupiah(invoice.Subtotal),
+		TaxPercent:        fmt.Sprintf("%.0f", invoice.TaxPercent),
+		TaxAmount:         services.FormatRupiah(invoice.TaxAmount),
+		Total:             services.FormatRupiah(invoice.Total),
 	}
 
 	pdfData.Items = make([]services.PDFItem, len(invoice.Items))
