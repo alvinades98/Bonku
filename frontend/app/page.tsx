@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import PublicStats from '@/components/PublicStats'
+import QuickInvoiceGenerator from '@/components/QuickInvoiceGenerator'
 
 const features = [
   {
@@ -107,20 +108,41 @@ export default function Home() {
               Cocok untuk freelancer dan UMKM di Indonesia.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="#quick-invoice"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl text-base font-semibold transition-colors shadow-lg shadow-indigo-200 text-center"
+              >
+                Buat Invoice Sekarang &darr;
+              </a>
               <Link
                 href="/register"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl text-base font-semibold transition-colors shadow-lg shadow-indigo-200"
+                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-8 py-3.5 rounded-xl text-base font-semibold transition-colors text-center"
               >
-                Mulai Gratis &rarr;
-              </Link>
-              <Link
-                href="/login"
-                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-8 py-3.5 rounded-xl text-base font-semibold transition-colors"
-              >
-                Sudah Punya Akun
+                Daftar untuk Fitur Lengkap
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Quick Invoice Generator */}
+      <section id="quick-invoice" className="py-16 sm:py-20 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-full px-4 py-1.5 text-sm text-emerald-700 mb-4">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Gratis, Tanpa Login
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
+              Langsung Buat Invoice
+            </h2>
+            <p className="mt-3 text-lg text-slate-600">
+              Isi form di bawah, lihat preview secara real-time. Download PDF memerlukan login.
+            </p>
+          </div>
+          <QuickInvoiceGenerator />
         </div>
       </section>
 
@@ -176,18 +198,18 @@ export default function Home() {
             {[
               {
                 step: '1',
-                title: 'Daftar Akun',
-                description: 'Buat akun gratis dan isi profil bisnis kamu.',
+                title: 'Buat Invoice Langsung',
+                description: 'Isi form invoice di homepage tanpa perlu login. Preview real-time.',
               },
               {
                 step: '2',
-                title: 'Buat Invoice',
-                description: 'Tambahkan klien, item, dan perhitungan pajak otomatis.',
+                title: 'Daftar untuk Download',
+                description: 'Login atau daftar gratis untuk download PDF dan menyimpan invoice.',
               },
               {
                 step: '3',
                 title: 'Kirim & Pantau',
-                description: 'Download PDF dan kirim ke klien. Pantau status pembayaran.',
+                description: 'Kelola semua invoice, pantau status pembayaran dari dashboard.',
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
@@ -207,17 +229,17 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-indigo-600 rounded-3xl p-10 sm:p-14">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
-              Siap Membuat Invoice Pertama Kamu?
+              Sudah Buat Invoice? Simpan & Kelola Sekarang!
             </h2>
             <p className="mt-4 text-indigo-100 text-lg max-w-xl mx-auto">
-              Daftar sekarang dan mulai buat invoice profesional untuk bisnis kamu. Gratis!
+              Daftar gratis untuk download PDF, menyimpan riwayat invoice, dan mengelola pembayaran klien.
             </p>
             <div className="mt-8">
               <Link
                 href="/register"
                 className="inline-block bg-white hover:bg-slate-50 text-indigo-600 px-8 py-3.5 rounded-xl text-base font-semibold transition-colors"
               >
-                Daftar Gratis &rarr;
+                Daftar Gratis & Download PDF &rarr;
               </Link>
             </div>
           </div>

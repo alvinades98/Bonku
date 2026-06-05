@@ -18,6 +18,7 @@ Produk ini adalah Micro-SaaS generator invoice berbasis web yang ditujukan untuk
 | Fitur | Status MVP |
 |-------|------------|
 | Autentikasi JWT (Register/Login) | ✅ |
+| Quick Invoice Generator (No Login) | ✅ |
 | Manajemen Data Bisnis & Logo | ✅ |
 | Manajemen Klien (CRUD) | ✅ |
 | Membuat Invoice + Multiple Items | ✅ |
@@ -75,6 +76,25 @@ Produk ini adalah Micro-SaaS generator invoice berbasis web yang ditujukan untuk
 ### FR-006: Dashboard
 - Tabel list invoice dengan filter status.
 - Statistik sederhana: Total invoice bulan ini, Outstanding (belum dibayar), Paid.
+
+### FR-007: Quick Invoice Generator (Public/No Auth)
+- Tersedia langsung di homepage (`/`), tanpa perlu login atau register.
+- User mengisi:
+  - Data pengirim: Nama bisnis, email, telepon, alamat
+  - Data klien: Nama, email, telepon, alamat
+  - Detail invoice: Nomor invoice, tanggal terbit, tanggal jatuh tempo
+  - Daftar item: Deskripsi, qty, harga satuan (tambah/hapus baris dinamis)
+  - Pajak: Toggle on/off, persentase editable (default 0%)
+  - Catatan/Keterangan
+- Preview invoice secara **real-time** di sisi kanan form (live update saat mengetik).
+- Tombol "Preview" membuka modal full-screen menampilkan invoice dalam format mirip PDF.
+- Tombol "Download PDF" menampilkan **modal perbandingan fitur** (Tanpa Login vs Dengan Login):
+  - **Tanpa Login**: Download PDF gratis via browser print-to-PDF (window.open + print dialog)
+  - **Dengan Login**: Download PDF profesional, simpan riwayat invoice, manajemen klien, dashboard & tracking status, logo bisnis di invoice, nomor invoice auto-generate
+- User bisa langsung download atau memilih daftar untuk fitur lengkap.
+- Semua data form disimpan di state browser (client-side), tidak ada data yang dikirim ke backend.
+- Responsif: di mobile, form dan preview ditampilkan dalam tab toggle (Edit / Preview).
+- Tujuan: sebagai **conversion funnel** — user mencoba fitur, download gratis, lalu terdorong register untuk fitur lengkap.
 
 ---
 
@@ -277,6 +297,7 @@ Base Path: `http://localhost:8080/api/v1`
 ### Routing (App Router)
 | Path | Halaman |
 |------|---------|
+| `/` | Landing page + Quick Invoice Generator (no auth) |
 | `/login` | Form login |
 | `/register` | Form register |
 | `/dashboard` | Ringkasan statistik |
